@@ -36,7 +36,7 @@ app.post("/upload-map", async (req, res) => {
       });
     } else {
       let map = req.files.map;
-      map.mv('./uploads' + map.name);
+      map.mv('./uploads/' + map.name);
 
       res.send({
         status: true,
