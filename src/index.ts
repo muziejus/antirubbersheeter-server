@@ -4,6 +4,7 @@ import fileUpload from "express-fileupload";
 import cors from "cors";
 import bodyParser from "body-parser";
 import morgan from "morgan";
+import tile from "./tiler";
 
 const app = express();
 
@@ -36,17 +37,22 @@ app.post("/upload-map", async (req, res) => {
       });
     } else {
       let map = req.files.map;
-      map.mv('./uploads/' + map.name);
+      const path = `./uploads/${map.name}`;
+      await map.mv(path);
+
+      const info = await tile(path, { background: { r: 255, g: 255, b: 255, alpha: 0 }, container: "zip", layout: "google" });
 
       res.send({
         status: true,
         message: 'File is uploaded',
         data: {
+          info,
           name: map.name,
-          mimtype: map.mimetype,
+          mimetype: map.mimetype,
           size: map.size,
         }
       })
+      // res.download(`./uploads/image-out.zip`)
     }
   } catch (error) {
     res.status(500).send(error);
