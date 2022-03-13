@@ -20,8 +20,9 @@
     "inlineSources": true,
     "baseUrl": ".",
     "module": "es6",
-    "experimentalDecorators": true
+    "experimentalDecorators": true,
+    "typeRoots": ["types/*"]
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "types/**/*"],
   "exclude": ["node_modules"]
 }
