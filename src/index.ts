@@ -5,7 +5,7 @@ import cors from "cors";
 import bodyParser from "body-parser";
 import morgan from "morgan";
 import tile from "./tiler";
-
+import parseCsv from "./csv";
 const app = express();
 
 dotenv.config();
@@ -17,6 +17,8 @@ app.use(fileUpload({
   limits: {
     fileSize: 10 * 1024 * 1024 * 1024 // 10MB max file(s) size
   },
+  safeFileNames: true,
+  preserveExtension: true,
 }));
 
 app.use(cors());
@@ -24,11 +26,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(morgan('dev'));
 
-app.get("/", (_, res) => {
-  res.send("Hello world!");
-});
-
-app.post("/upload-map", async (req, res) => {
+app.post("/upload", async (req, res) => {
   try {
     if (!req.files || Object.keys(req.files).length === 0) {
       res.send({
@@ -36,33 +34,45 @@ app.post("/upload-map", async (req, res) => {
         message: "No file uploaded"
       });
     } else {
+      const epoch = Date.now();
       let map = req.files.map;
-      const path = `./uploads/${map.name}`;
-      await map.mv(path);
+      let csv = req.files.csv;
+      const path = `./uploads/${epoch}`;
+      await map.mv([path, map.name].join("/"));
+      await csv.mv([path, "data.csv"].join("/"));
 
-      const info = await tile(path, { background: { r: 255, g: 255, b: 255, alpha: 0 }, container: "zip", layout: "google" });
+      const tileInfo = await tile(path, map.name, {
+        background: { r: 255, g: 255, b: 255, alpha: 0 },
+        // container: "zip",
+        container: "fs",
+        layout: "google"
+      });
+
+      const dataInfo = parseCsv(path);
 
       res.send({
         status: true,
         message: 'File is uploaded',
         data: {
-          info,
-          name: map.name,
-          mimetype: map.mimetype,
-          size: map.size,
+          path,
+          map: {
+            name: map.name,
+            mimetype: map.mimetype,
+            size: map.size,
+          },
+          csv: {
+            mimetype: csv.mimetype,
+            size: csv.size,
+          },
+          tileInfo,
+          dataInfo,
         }
       })
-      // res.download(`./uploads/image-out.zip`)
     }
   } catch (error) {
     res.status(500).send(error);
   }
 });
-
-// app.post("/", (_, res) => {
-//   // Do Sharp stuff.
-//   res.download();
-// });
 
 app.listen(port, () => {
   console.log(`App is listening on port ${port}.`);
