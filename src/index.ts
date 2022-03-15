@@ -6,7 +6,11 @@ import bodyParser from "body-parser";
 import morgan from "morgan";
 import tile from "./tiler";
 import parseCsv from "./csv";
+import { randomUUID } from "crypto";
+
+
 const app = express();
+
 
 dotenv.config();
 
@@ -34,10 +38,10 @@ app.post("/upload", async (req, res) => {
         message: "No file uploaded"
       });
     } else {
-      const epoch = Date.now();
+      const uuid = randomUUID();
       let map = req.files.map;
       let csv = req.files.csv;
-      const path = `./uploads/${epoch}`;
+      const path = `uploads/${uuid}`;
       await map.mv([path, map.name].join("/"));
       await csv.mv([path, "data.csv"].join("/"));
 
@@ -54,6 +58,7 @@ app.post("/upload", async (req, res) => {
         status: true,
         message: 'File is uploaded',
         data: {
+          uuid,
           path,
           map: {
             name: map.name,
@@ -61,6 +66,7 @@ app.post("/upload", async (req, res) => {
             size: map.size,
           },
           csv: {
+            name: "data.csv",
             mimetype: csv.mimetype,
             size: csv.size,
           },
