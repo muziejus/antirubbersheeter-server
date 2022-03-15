@@ -29,6 +29,7 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(morgan('dev'));
+app.use(express.static('public'));
 
 app.post("/upload", async (req, res) => {
   try {
@@ -38,21 +39,31 @@ app.post("/upload", async (req, res) => {
         message: "No file uploaded"
       });
     } else {
+      let tileInfo, dataInfo;
       const uuid = randomUUID();
       let map = req.files.map;
       let csv = req.files.csv;
       const path = `uploads/${uuid}`;
-      await map.mv([path, map.name].join("/"));
-      await csv.mv([path, "data.csv"].join("/"));
 
-      const tileInfo = await tile(path, map.name, {
-        background: { r: 255, g: 255, b: 255, alpha: 0 },
-        // container: "zip",
-        container: "fs",
-        layout: "google"
-      });
+      if (map) {
+        await map.mv([path, map.name].join("/"));
+        tileInfo = await tile(path, map.name, {
+          background: { r: 255, g: 255, b: 255, alpha: 0 },
+          // container: "zip",
+          container: "fs",
+          layout: "google"
+        });
+      }
 
-      const dataInfo = parseCsv(path);
+      if (csv) {
+        await csv.mv([path, "data.csv"].join("/"));
+        dataInfo = parseCsv(path);
+      }
+
+      if (!csv && !map) {
+        console.log(req.files);
+        console.log(req.body);
+      }
 
       res.send({
         status: true,
@@ -61,14 +72,14 @@ app.post("/upload", async (req, res) => {
           uuid,
           path,
           map: {
-            name: map.name,
-            mimetype: map.mimetype,
-            size: map.size,
+            name: map?.name,
+            mimetype: map?.mimetype,
+            size: map?.size,
           },
           csv: {
             name: "data.csv",
-            mimetype: csv.mimetype,
-            size: csv.size,
+            mimetype: csv?.mimetype,
+            size: csv?.size,
           },
           tileInfo,
           dataInfo,
