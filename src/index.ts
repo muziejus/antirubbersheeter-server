@@ -1,4 +1,5 @@
 import dotenv from "dotenv";
+import fs from "fs";
 import express from "express";
 import fileUpload from "express-fileupload";
 import cors from "cors";
@@ -39,7 +40,7 @@ app.post("/upload", async (req, res) => {
         message: "No file uploaded",
       });
     } else {
-      let tileInfo, dataInfo;
+      let tileInfo, dataInfo, maxZoom;
       const uuid = randomUUID();
       let map = req.files.map;
       let csv = req.files.csv;
@@ -49,12 +50,11 @@ app.post("/upload", async (req, res) => {
         await map.mv([path, map.name].join("/"));
         tileInfo = await tile(path, map.name, {
           background: "hsla(0, 100%, 50%, 0)",
-          center: true,
           container: "fs",
-          depth: "onetile",
           layout: "google",
         });
-        console.log(tileInfo);
+        const levels = fs.readdirSync(`${path}/tiles/`).length - 1;
+        maxZoom = levels;
       }
 
       if (csv) {
@@ -67,7 +67,7 @@ app.post("/upload", async (req, res) => {
         console.log(req.body);
       }
 
-      res.send({
+      const message = {
         status: true,
         message: "File is uploaded",
         data: {
@@ -77,16 +77,20 @@ app.post("/upload", async (req, res) => {
             name: map?.name,
             mimetype: map?.mimetype,
             size: map?.size,
+            maxZoom,
           },
           csv: {
-            name: "data.csv",
+            name: csv ? "data.csv" : "",
             mimetype: csv?.mimetype,
             size: csv?.size,
           },
           tileInfo,
           dataInfo,
         },
-      });
+      };
+
+      // console.log(message);
+      res.send(message);
     }
   } catch (error) {
     res.status(500).send(error);
