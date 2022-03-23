@@ -1,8 +1,13 @@
 import sharp from "sharp";
 
-export default async function tile(path: string, image: string, options: sharp.TileOptions) {
+export default async function tile(
+  path: string,
+  image: string,
+  options: sharp.TileOptions
+) {
   return sharp([path, image].join("/"))
-    .png()
+    .ensureAlpha()
+    .png({ palette: true })
     .tile(options)
     .toFile(`${path}/tiles`)
     .then(info => info)

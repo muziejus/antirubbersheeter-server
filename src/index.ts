@@ -48,11 +48,13 @@ app.post("/upload", async (req, res) => {
       if (map) {
         await map.mv([path, map.name].join("/"));
         tileInfo = await tile(path, map.name, {
-          background: { r: 255, g: 255, b: 255, alpha: 0 },
-          // container: "zip",
+          background: "hsla(0, 100%, 50%, 0)",
+          center: true,
           container: "fs",
+          depth: "onetile",
           layout: "google",
         });
+        console.log(tileInfo);
       }
 
       if (csv) {
