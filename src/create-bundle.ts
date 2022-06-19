@@ -1,4 +1,5 @@
 import fs from "fs";
+import archiver from "archiver";
 import { Request, Response } from "express";
 
 interface BundleData {
@@ -41,10 +42,51 @@ const createBundle = (request: Request, response: Response) => {
     fs.writeFileSync([path, "index.html"].join("/"), generateHtmlString(data));
 
     //4. zip everything up and give it to download.
+    const zipfilePath = `public/uploads/antirubbersheeter-${data.mapUuid}.zip`;
+    const archive = archiver("zip");
+    const zipfile = fs.createWriteStream(zipfilePath);
 
-    const message = "hi. bundle created";
+    // response.writeHead(200, {
+    //   "Content-Type": "application/zip",
+    //   "Content-disposition": `attachment; filename=antirubbersheeter-${data.mapUuid}.zip`,
+    // });
 
-    response.send(message);
+    zipfile.on("close", () => {
+      console.log(
+        `Archiver bundled ${zipfilePath}, and it is ready for download`
+      );
+      const zipfileUri = zipfilePath.replace("public", "");
+      response.send({ zipfileUri });
+      // response.download(zipfilePath, error => {
+      //   if (error) {
+      //     console.log("if error triggered");
+      //     console.log(error);
+      //     if (response.headersSent) {
+      //       // Headers were sent but?
+      //     } else {
+      //       throw error;
+      //     }
+      //   }
+      // });
+    });
+
+    archive.on("warning", error => {
+      if (error.code === "ENOENT") {
+        console.log(error);
+      } else {
+        throw error;
+      }
+    });
+
+    archive.on("error", error => {
+      throw error;
+    });
+
+    archive.pipe(zipfile);
+
+    archive.directory(path, false);
+
+    archive.finalize();
   } catch (error) {
     response.status(500).send(error);
   }
@@ -82,7 +124,7 @@ const generateHtmlString = (data: BundleData) => {
           [${data.bounds.southEast.lat}, ${data.bounds.southEast.lng}]
         );
       const map = L.map('map', {
-        CRS: L.CRS.Simple,
+        crs: L.CRS.Simple,
         maxZoom: ${data.maxZoom},
         bounds,
         center: bounds.getCenter(),
@@ -91,7 +133,8 @@ const generateHtmlString = (data: BundleData) => {
 
       // Add tiles.
       L.tileLayer('tiles/{z}/{y}/{x}.png', {
-        attribution: '<a href="http://antirubbersheeter.moacir.com">Antirubbersheeter</a>'
+        attribution: '<a href="http://antirubbersheeter.moacir.com">Antirubbersheeter</a>',
+        zoomOffset: -1,
       }).addTo(map);
 
       // Add markers.
