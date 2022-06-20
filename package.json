@@ -18,6 +18,8 @@
     "dev": "nodemon"
   },
   "dependencies": {
+    "@google-cloud/functions": "^2.0.0",
+    "@google-cloud/functions-framework": "^3.1.2",
     "archiver": "^5.3.1",
     "body-parser": "^1.20.0",
     "cors": "^2.8.5",
@@ -25,8 +27,6 @@
     "dotenv": "^16.0.1",
     "express": "^4.18.1",
     "express-fileupload": "^1.4.0",
-    "firebase-admin": "^11.0.0",
-    "firebase-functions": "^3.21.2",
     "morgan": "^1.10.0",
     "sharp": "^0.30.6"
   },
